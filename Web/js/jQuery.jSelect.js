@@ -58,21 +58,7 @@
             },
 
             showDropdown: function (e) {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jselect-wrapper', jSelect);
-                
                 methods.open.call(self.elem, e);
-
-                var containerWidth = jSelect.width();
-                var wrapperOuterWidth = jSelectWrapper.outerWidth();
-                var wrapperWidth = jSelectWrapper.width() - (wrapperOuterWidth - containerWidth);
-
-                jSelectWrapper.css({
-                    width: wrapperWidth
-                });
-
-                _private.setNumberOfOptionsShown();
             },
 
             hideDropdown: function (e) {
@@ -193,6 +179,20 @@
                     _private.enteredText = '';
                 }, 500);
             },
+            
+            setWidth: function() {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jselect-wrapper', jSelect);
+
+                var containerWidth = jSelect.width();
+                var wrapperOuterWidth = jSelectWrapper.outerWidth();
+                var wrapperWidth = jSelectWrapper.width() - (wrapperOuterWidth - containerWidth);
+
+                jSelectWrapper.css({
+                    width: wrapperWidth
+                });  
+            },
 
             setNumberOfOptionsShown: function () {
                 var select = $(self.elem),
@@ -248,6 +248,9 @@
             open: function() {
                 var select = $(this),
                     jSelect = select.parent();
+                
+                _private.setWidth()
+                _private.setNumberOfOptionsShown();
                 
                 if (jSelect.hasClass('open')) {
                     jSelect.removeClass('open');
