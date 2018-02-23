@@ -1,365 +1,363 @@
-var JSelect = function(elem, options) {
-    this.originalSelectElement = elem;
-    this.originalOptions = this.originalSelectElement.children;
-    this.selectId = options.id || "";
-    this.placeholder = options.placeholder || "Please choose an option";
-    this.callback = options.onChange || function(value) {};
-    this.size = options.size || 0;
-    this.borderThickness = options.borderThickness || 2;
-    this.keyBoardInput = options.keyBoardInput || true;
-    this.currentValue = options.currentValue || "";
-    this.currentSelectedText = options.currentSelectedText || "";
+(function ($) {
+    "use strict";
 
-    this.isOpen = false;
-    this.keyPresses =  -1;
+    $.jSelect = function (element, options, test) {
+        var self;
 
-    this.container = document.createElement("div");
-    this.selected = document.createElement("div");
-    this.wrapper = document.createElement("div");
+        var _private = {
+            container: '',
+            selected: '',
+            wrapper: '',
+            keyPresses: -1,
+            enterTimeout: function () {},
+            enteredText: '',
 
-    this.originalSelectElement.style.display = "none";
-    
-    if(!window.getComputedStyle) {
-        window.getComputedStyle = function(element) { 
-            return element.currentStyle; 
-        };
-    }
+            createMarkup: function () {
+                this.container = $('<div />').addClass('jSelect').attr('id', self.settings.id);
+                self.$elem.before(this.container);
 
-    this.create();
-};
+                this.selected = $('<div />').addClass('jSelect-selected').text(self.settings.placeholder);
 
-JSelect.prototype = function() {
-
-    var private = {
-        
-        enteredText: "",
-        enterTimeout: function() {},
-
-        createMarkUp: function() {
-            this.container.setAttribute("id", this.selectId);
-            utils.addClass(this.container, "jselect");
-            this.originalSelectElement.parentNode.insertBefore(this.container, this.originalSelectElement);
-
-            var cssClass = this.currentValue.length > 0 ? "jselect-selected" :  "jselect-selected placeholder";
-            utils.addClass(this.selected, cssClass);
-            this.selected.innerHTML = this.currentSelectedText.length > 0 ? this.currentSelectedText : this.placeholder;
-            this.container.appendChild(this.selected);
-
-            utils.addClass(this.wrapper, "jselect-wrapper");
-            this.container.appendChild(this.wrapper);
-            this.container.appendChild(this.originalSelectElement, this.wrapper);
-        },
-
-        createOptions: function() {
-            var self = this;
-
-            for(var i = 0; i < self.originalOptions.length; i++) {
-                var child = self.originalOptions[i];
-                if(!child.selected || !child.disabled) {
-                    private.createOption.call(this, child);
-                }   
-            }
-        },
-
-        createOption: function(optionToCreate) {
-            var option = document.createElement("div");
-
-            utils.addClass(option, "jselect-option");
-            option.setAttribute("data-option-value", optionToCreate.value);
-            option.innerHTML = optionToCreate.innerHTML;
-
-            this.wrapper.appendChild(option);
-
-            private.listenForOptionClick.call(this, option);
-        },
-
-        listenForOptionClick: function(option) {
-            var self = this;
-
-            if(option.addEventListener) {
-                option.addEventListener("click", function(e) {
-                    self.selectOption(e);
-                });
-            } else {
-                option.attachEvent("onclick", function(e) {
-                    self.selectOption(e);
-                });
-            }
-        },
-
-        triggerKeys: function(e) {
-            var self = this;
-
-            if(self.isOpen) {
-                if(e.keyCode === 40) {
-                    self.keyPresses++;
-                    private.moveDown.call(this);
+                if (self.settings.value.length > 0) {
+                    methods.updateValue.call(self.elem, self.settings.value);
+                } else {
+                    this.selected.addClass('placeholder');
                 }
 
-                if(e.keyCode === 38) {
-                    self.keyPresses--;
-                    private.moveUp.call(this);
-                }
+                this.container.append(this.selected);
 
-                if(e.keyCode === 13 || e.keyCode === 9) {
-                    if(self.keyPresses > -1) {
-                        self.selectOption(self.wrapper.children[self.keyPresses]);
+                this.wrapper = $('<div />').addClass('jSelect-wrapper');
+                this.container.append(this.wrapper);
+                this.container.append(self.$elem);
+
+                this.createOptions();
+            },
+
+            createOptions: function () {
+                for (var i = 0; i < self.$elem.children().length; i++) {
+                    var option = self.$elem.children()[i];
+                    if(!$(option).attr('disabled') && !$(option).attr('selected')) {
+                        _private.createOption(option);
                     }
-                    
-                    if(e.stopPropagation) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                    } else {
-                        e.returnValue = false;
-                    }
-                    
-                    self.close(e);
                 }
-                
-                if(e.keyCode !== 0) {
-                    clearTimeout(private.enterTimeout);
-                    private.enteredText += String.fromCharCode(e.keyCode);
-                    
-                    for(var i = 0; i < this.wrapper.children.length; i++) {
-                        var option = this.wrapper.children[i];
-                        if(option.innerText.toLowerCase().indexOf(private.enteredText.toLowerCase()) === 0) {
-                            utils.addClass(option, "active");
-                            private.scrollOptions(self.wrapper, option);
-                            self.keyPresses = i;
+            },
+
+            createOption: function (option) {
+                var newOption = $('<div />').addClass('jSelect-option')
+                    .attr('data-option-value', $(option).val())
+                    .text($(option).text());
+
+                this.wrapper.append(newOption);
+                this.listenForOptionClick(newOption);
+            },
+
+            listenForOptionClick: function (option) {
+                option.click(function() {
+                    methods.selectOption.call(self.elem, option);
+                    methods.close.call(self);
+                });
+            },
+
+            showDropdown: function (e) {
+                methods.open.call(self, e);
+            },
+
+            hideDropdown: function (e) {
+                methods.close.call(self, e);
+            },
+
+            addEventHandlers: function () {
+                var select = $(self.elem),
+                    jSelect = select.parent();
+
+                jSelect.find('.jSelect-selected').click(function (e) {
+                    jSelect.removeClass('open');
+                    _private.showDropdown(e);
+
+                    return false;
+                });
+
+                $(document).click(_private.hideDropdown);
+                $(document).on("keydown", _private.triggerKeys);
+            },
+
+            removeEventHandlers: function() {
+                var select = $(self.elem),
+                    jSelect = select.parent();
+
+                jSelect.off();
+                $(document).off();
+            },
+
+            triggerKeys: function (e) {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
+
+                if (jSelect.hasClass('open')) {
+
+                    if (e.keyCode === 40) {
+                        _private.keyPresses++;
+                        _private.moveDown();
+                    }
+
+                    if (e.keyCode === 38) {
+                        _private.keyPresses--;
+                        _private.moveUp();
+                    }
+
+                    if (e.keyCode === 13) {
+                        if (_private.keyPresses > -1) {
+                            var option = $(jSelectWrapper.children()[_private.keyPresses]);
+                            methods.selectOption.call(self.elem, option);
                         }
+
+                        if (e.stopPropagation) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                        } else {
+                            e.returnValue = false;
+                        }
+
+                        methods.close.call(self, e);
                     }
-                    
-                    private.enterTimeout = setTimeout(function() {
-                        private.enteredText = "";
-                    }, 500);
+
+                    if (e.keyCode !== 0) {
+                        _private.textSearch(e);
+                    }
+
+                    if (_private.keyPresses >= 0) {
+                        var option = $(jSelectWrapper.children()[_private.keyPresses]);
+                        _private.scrollOptions(jSelectWrapper, option);
+                    }
+                }
+            },
+
+            moveDown: function () {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
+
+                if (_private.keyPresses >= jSelectWrapper.children().length) {
+                    _private.keyPresses = 0;
                 }
 
-                if(self.keyPresses >= 0) {
-                    private.scrollOptions(self.wrapper, self.wrapper.children[self.keyPresses]);
+                $(jSelectWrapper.children()).removeClass('active');
+                $(jSelectWrapper.children()[_private.keyPresses]).addClass('active');
+            },
+
+            moveUp: function () {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
+
+                if (_private.keyPresses < 0) {
+                    _private.keyPresses = jSelectWrapper.children().length - 1;
                 }
-            }
-        },
 
-        moveDown: function() {
-            var self = this;
+                $(jSelectWrapper.children()).removeClass('active');
+                $(jSelectWrapper.children()[_private.keyPresses]).addClass('active');
+            },
 
-            if(self.keyPresses >= self.wrapper.children.length) {
-                self.keyPresses = 0;
-            }
+            textSearch: function (e) {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
 
-            var childNumber = self.keyPresses > 0 ? self.keyPresses - 1 : self.keyPresses;
-            
-            utils.removeClass(self.wrapper.children[childNumber], "active");
-            utils.removeClass(self.wrapper.children[self.wrapper.children.length - 1], "active");
-            utils.addClass(self.wrapper.children[self.keyPresses], "active");
-        },
+                clearTimeout(_private.enterTimeout);
+                _private.enteredText += String.fromCharCode(e.keyCode);
 
-        moveUp: function() {
-            var self = this;
+                for (var i = 0; i < jSelectWrapper.children().length; i++) {
+                    var option = $(jSelectWrapper.children()[i]);
+                    if (option.text().toLowerCase().indexOf(_private.enteredText.toLowerCase()) === 0) {
+                        option.addClass('active')
+                        _private.scrollOptions(jSelectWrapper, option);
+                        _private.keyPresses = i;
+                    } else {
+                        option.removeClass('active');
+                    }
+                }
 
-            if(self.keyPresses < 0) {
-                self.keyPresses = self.wrapper.children.length - 1;
-            }
+                _private.enterTimeout = setTimeout(function () {
+                    _private.enteredText = '';
+                }, 500);
+            },
 
-            var childNumber = self.keyPresses < 0 ? self.keyPresses: self.keyPresses + 1;
-            childNumber = childNumber >= self.wrapper.children.length ? self.wrapper.children.length - 1 : childNumber;
+            setWidth: function() {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
 
-            utils.removeClass(self.wrapper.children[childNumber], "active");
-            utils.removeClass(self.wrapper.children[0], "active");
-            utils.addClass(self.wrapper.children[self.keyPresses], "active");
-        },
+                var containerWidth = jSelect[0].getBoundingClientRect().width;
 
-        scrollOptions: function(optionsWrapper, nextOption) {
-            var scrollWrapper = optionsWrapper.getBoundingClientRect(),
-                option = nextOption.getBoundingClientRect();
-
-            if (scrollWrapper.top > option.top ) {
-                optionsWrapper.scrollTop = optionsWrapper.scrollTop - scrollWrapper.top + option.top;
-            } else if (scrollWrapper.bottom < option.bottom ) {
-                optionsWrapper.scrollTop = optionsWrapper.scrollTop - scrollWrapper.bottom + option.bottom;
-            }
-        },
-
-        setNumberOfOptionsShown: function() {
-            var self = this;
-
-            if(self.size > 0) {
-                var option = self.wrapper.children[0].getBoundingClientRect();
-                var height = option.height || option.bottom - option.top;
-                
-                var borderThickness = private.getBorderThickness(self.wrapper);
-                var wrapperHeight = (height * self.size) + (borderThickness * 2);
-                self.wrapper.style.maxHeight = wrapperHeight + "px";
-            }
-        },
-        
-        getBorderThickness: function(element) {
-            var self = this;
-            
-            var borderWidth = window.getComputedStyle(element).borderWidth.split("px")[0];
-            return borderWidth.length > 0 ? borderWidth : 1;
-        },
-        
-        showDropdown: function(e) {
-            var self = this;
-            
-            self.open(e);
-            private.setNumberOfOptionsShown.call(self);
-
-            var container = self.container.getBoundingClientRect();
-            var width = container.width || container.right - container.left;
-            
-            
-            var borderThickness = private.getBorderThickness(self.wrapper);
-            var wrapperWidth = width - (borderThickness * 2) + "px";
-            self.wrapper.style.width = wrapperWidth;
-        }
-    };
-
-    var utils = {
-        
-        hasClass: function(element, cssClass) {
-            return !!element.className.match(new RegExp("(\\s|^)" + cssClass + "(\\s|$)"));
-        },
-
-        addClass: function(element, cssClass) {
-            if (!this.hasClass(element,cssClass)) {
-                element.className += " " + cssClass;
-            }
-        },
-
-        removeClass: function(element, cssClass) {
-            if (this.hasClass(element, cssClass)) {
-                var reg = new RegExp("(\\s|^)" + cssClass + "(\\s|$)");
-                element.className = element.className.replace(reg, "  ");
-            }
-        }
-    };
-    
-    var create = function() {
-        var self = this;
-
-        private.createMarkUp.call(this);
-        private.createOptions.call(this);
-
-        if(self.container.addEventListener) {
-            self.container.addEventListener("click", function(e) {
-                private.showDropdown.call(self, e);
-            });
-        } else {
-            self.container.attachEvent("onclick", function(e) {
-                private.showDropdown.call(self, e);
-            });
-        }
-
-        if(self.keyBoardInput) {
-            
-            if(document.addEventListener) {
-                document.addEventListener("keydown", function(e) {
-                    private.triggerKeys.call(self, e);
+                jSelectWrapper.css({
+                    width: containerWidth
                 });
-            } else {
-                document.attachEvent("onkeydown", function(e) {
-                    private.triggerKeys.call(self, e);
-                });
-            }
-        }
-        
-        if(document.addEventListener) {
-            document.addEventListener("click", function(e) {
-                self.close(e);
-            });
-        } else {
-            document.attachEvent("onclick", function(e) {
-                self.close(e);
-            });
-        }
+            },
 
-        return self;
-    },
+            setNumberOfOptionsShown: function () {
+                var select = $(self.elem),
+                    jSelect = select.parent(),
+                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
 
-    open = function(e) {
-        var self = this;
+                if (self.settings.size > 0 && jSelectWrapper.children().length > self.settings.size) {
+                    var option = $(jSelectWrapper.children()[0]);
+                    var height = option.outerHeight();
+                    var wrapperHeight = (height * self.settings.size);
 
-        var currentClass = self.container.className;
+                    jSelectWrapper.css({
+                        maxHeight: wrapperHeight
+                    });
+                }
+            },
 
-        if(currentClass.indexOf("open") < 0) {
-            self.isOpen = true;
-            utils.addClass(self.container, "open");
-        } else {
-            utils.removeClass(self.container, "open");
-        }
-    },
+            scrollOptions: function (optionsWrapper, nextOption) {
+                var scrollWrapper = optionsWrapper[0].getBoundingClientRect(),
+                    option = nextOption[0].getBoundingClientRect();
 
-    close = function(e) {
-        var self = this;
-
-        if(e !== undefined) {
-            var parentElement = e.target !== undefined ? e.target.parentElement : e.srcElement.parentElement;
-            
-            if((e.keyCode === 13 || e.keyCode === 9) || (parentElement !== self.container)) {
-                if(self.container.className.indexOf("open") > 0) {
-                    self.isOpen = false;
-                    utils.removeClass(self.container, "open");
+                if (scrollWrapper.top > option.top) {
+                    optionsWrapper.scrollTop(optionsWrapper.scrollTop() - scrollWrapper.top + option.top);
+                } else if (scrollWrapper.bottom < option.bottom) {
+                    optionsWrapper.scrollTop(optionsWrapper.scrollTop() - scrollWrapper.bottom + option.bottom);
                 }
             }
-        } else {
-            if(self.container.className.indexOf("open") > 0) {
-                self.isOpen = false;
-                utils.removeClass(self.container, "open");
+        };
+
+        this.init = function (args) {
+            self = this;
+
+            this.elem = element;
+            this.$elem = $(element);
+            this.settings = $.extend(true, {}, $.jSelect.defaults, options);
+            this.settings.id = this.settings.id || this.$elem.attr('id') || new Date().toString();
+
+            if (!$(element).parent().hasClass('jSelect')) {
+                _private.createMarkup();
+                if (self.settings.disabled) {
+                    $(element).parent().addClass('disabled');
+                } else {
+                    _private.addEventHandlers();
+                }
+            }
+
+            if (methods[options]) {
+                methods[options].call(element, args[0]);
+            }
+        };
+
+        var methods = {
+
+            open: function() {
+                var select = this.$elem,
+                    jSelect = select.parent();
+
+                _private.setWidth()
+                _private.setNumberOfOptionsShown();
+
+                if (jSelect.hasClass('open')) {
+                    jSelect.removeClass('open');
+
+                    if (this.$elem.val() === null) {
+                        this.$elem.val(null).trigger('change');
+                    }
+                } else {
+                    jSelect.addClass('open');
+                }
+            },
+
+            close: function() {
+                var select = this.$elem,
+                    jSelect = select.parent();
+
+                if (jSelect.hasClass('open')) {
+                    jSelect.removeClass('open');
+
+                    if (this.$elem.val() === null) {
+                        this.$elem.val(null).trigger('change');
+                    }
+                }
+            },
+
+            updateValue: function(value) {
+                var select = $(this),
+                    jSelect = select.parent(),
+                    jSelectOptions = $('.jSelect-wrapper', jSelect).children();
+
+                for (var i = 0; i < jSelectOptions.length; i++ ) {
+                    if ($(jSelectOptions[i]).attr('data-option-value') === value) {
+                        methods.selectOption.call(select, $(jSelectOptions[i]));
+                    }
+                }
+            },
+
+            selectOption: function(option) {
+                var select = $(this),
+                    jSelect = select.parent(),
+                    optionText = option.text(),
+                    optionValue = option.attr('data-option-value')
+
+                $('.jSelect-wrapper', jSelect).children().removeClass('active');
+                option.addClass('active');
+
+                $('.jSelect-selected', jSelect).text(optionText).removeClass('placeholder');  
+                self.settings.currentValue = optionValue;
+
+                for (var i = 0; i < self.$elem.children().length; i++) {
+                    var selectedChild = $(self.$elem.children()[i]);
+
+                    if (selectedChild.val() === optionValue) {
+                        selectedChild.attr("selected", true);
+                    } else {
+                        selectedChild.removeAttr("selected");
+                    }
+                }
+
+                self.$elem.val(optionValue).trigger('change');
+                self.settings.onChange(self.settings.value);
+            },
+
+            enable: function() {
+                var select = $(this),
+                    jSelect = select.parent();
+
+                jSelect.removeClass('disabled');
+                select.attr('disabled', false);
+
+                self.settings.disabled = false;
+                _private.addEventHandlers.call(self.elem);
+            },
+
+            disable: function() {
+                var select = $(this),
+                    jSelect = select.parent();
+
+                jSelect.addClass('disabled');
+                select.attr('disabled', true);
+
+                self.settings.disabled = true;
+                _private.removeEventHandlers.call(self.elem);
             }
         }
-        
-        for(var i = 0; i < self.wrapper.children.length; i++) {
-            var option = self.wrapper.children[i];
-            if(option.innerText !== self.currentSelectedText) {
-                utils.removeClass(option, "active");
-            }
-        }
-    },
-
-    selectOption = function(selectedOption) {
-        var self = this;
-        
-        var option = selectedOption.innerText ? selectedOption : selectedOption.srcElement;
-        
-        var selectedOptionText = option.innerText,
-            selectedOptionValue = option.getAttribute("data-option-value");
-
-        self.selected.innerText = selectedOptionText;
-        self.updateCurrentValue(selectedOptionValue);
-        self.updateCurrentSelectedText(selectedOptionText);
-        utils.removeClass(self.selected, "placeholder");
-
-        for(var i = 0; i < self.originalOptions.length; i++) {
-            var selectedChild = self.originalOptions[i];
-
-            if(selectedChild.value === selectedOptionValue) {
-                selectedChild.setAttribute("selected", true);
-            } else {
-                selectedChild.removeAttribute("selected");
-            }
-        }
-        
-        if(self.callback !== undefined) {
-            self.callback(self.currentValue);
-        }
-    },
-
-    updateCurrentValue = function(value) {
-        this.currentValue = value;
-    },
-        
-    updateCurrentSelectedText = function(value) {
-        this.currentSelectedText = value;
     };
 
-    return {
-        create: create,
-        open: open,
-        close: close,
-        selectOption: selectOption,
-        updateCurrentValue: updateCurrentValue,
-        updateCurrentSelectedText: updateCurrentSelectedText
+    $.fn.jSelect = function (options) {
+
+        var args = Array.prototype.slice.call(arguments, 1);
+
+        return this.each(function () {
+            var jSelect = new $.jSelect(this, options);
+            $(this).data('jSelect', jSelect);
+            jSelect.init(args);
+        });
     };
-}();
+
+    $.jSelect.defaults = {
+        id: '',
+        placeholder: 'Please select an option',
+        value: '',
+        size: 0,
+        keyBoardInput: true,
+        disabled: false,
+        onChange: function (value) {},
+    }
+})(jQuery);
