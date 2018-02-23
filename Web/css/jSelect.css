@@ -1,12 +1,12 @@
-.jselect {
+.jSelect {
     position: relative;
-    width: 200px;
+    width: 100%;
     box-sizing: border-box;
     text-align: left;
     display: inline-block;
 }
 
-.jselect * {
+.jSelect * {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -15,37 +15,37 @@
     user-select: none;
 }
 
-.jselect select {
+.jSelect select {
     display: none !important;
 }
 
-.jselect .jselect-selected {
+.jSelect .jSelect-selected {
     width: 100%;
-    height: 35px;
+    height: 40px;
     position: relative;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border: 1px solid #DDDDDD;
-    border-radius: 3px;
-    font-size: 16px;
-    line-height: 22px;
-    color: #000;
-    background: #FFF;
+    border-radius: 0;
+    font-size: 14px;
+    line-height: 26px;
+    color: #333333;
+    background: #FFFFFF;
     box-sizing: border-box;
     cursor: pointer;
     overflow: hidden;
 }
 
-.jselect .jselect-selected.placeholder {
-    color: #D0D0D0;
+.jSelect .jSelect-selected.placeholder {
+    color: #999999;
 }
 
-.jselect.disabled .jselect-selected {
-    background: #929292;
-    color: #D6D6D6;
+.jSelect.disabled .jSelect-selected {
+    background: #DDDDDD;
+    color: #9A9A9A;
     cursor: not-allowed;
 }
 
-.jselect .jselect-selected:after {
+.jSelect .jSelect-selected:after {
     content: "";
     position: absolute;
     top: 50%;
@@ -57,16 +57,16 @@
     border-bottom: none;
 }
 
-.jselect.open .jselect-selected {
+.jSelect.open .jSelect-selected {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
 
-.jselect.open .jselect-selected {
-    border-color: #4D9AF4;
+.jSelect.open .jSelect-selected {
+    border-color: #999999;
 }
 
-.jselect.open .jselect-selected:after {
+.jSelect.open .jSelect-selected:after {
     content: "";
     position: absolute;
     top: 50%;
@@ -78,7 +78,7 @@
     border-top: none;
 }
 
-.jselect .jselect-wrapper {
+.jSelect .jSelect-wrapper {
     display: none;
     position: absolute;
     width: 100%;
@@ -86,33 +86,39 @@
     overflow-y: auto;
     z-index: 999;
     left: 0;
-    top: 33px;
+    top: 39px;
     border: 1px solid #DDDDDD;
-    box-sizing: content-box;
+    box-sizing: border-box;
     background: #FFF;
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
 }
 
-.jselect.open .jselect-wrapper {
+.jSelect.open .jSelect-wrapper {
     display: block;
-    border-color: #4D9AF4;
+    border-color: #999999;
     border-top-color: #DDDDDD;
+    font-size: 14px;
 }
 
-.jselect .jselect-wrapper .jselect-option {
+.jSelect .jSelect-wrapper .jSelect-option {
     padding: 5px 10px;
     box-sizing: border-box;
     cursor: pointer;
     line-height: 1.2;
 }
 
-.jselect .jselect-wrapper .jselect-option:hover, .jselect .jselect-wrapper .jselect-option.active {
-    background: #177BBB;
+.jSelect .jSelect-wrapper .jSelect-option:hover, .jSelect .jSelect-wrapper .jSelect-option.active {
+    background: #999999;
     color: #FFFFFF;
 }
 
-.jselect .jselect-wrapper .jselect-option:last-child:hover {
+.jSelect .jSelect-wrapper .jSelect-option.hovered {
+    background: #CCCCCC;
+    color: #FFFFFF;
+}
+
+.jSelect .jSelect-wrapper .jSelect-option:last-child:hover {
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
 }
