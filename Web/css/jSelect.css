@@ -1,0 +1,118 @@
+.jselect {
+    position: relative;
+    width: 200px;
+    box-sizing: border-box;
+    text-align: left;
+    display: inline-block;
+}
+
+.jselect * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.jselect select {
+    display: none !important;
+}
+
+.jselect .jselect-selected {
+    width: 100%;
+    height: 35px;
+    position: relative;
+    padding: 5px 10px;
+    border: 1px solid #DDDDDD;
+    border-radius: 3px;
+    font-size: 16px;
+    line-height: 22px;
+    color: #000;
+    background: #FFF;
+    box-sizing: border-box;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.jselect .jselect-selected.placeholder {
+    color: #D0D0D0;
+}
+
+.jselect.disabled .jselect-selected {
+    background: #929292;
+    color: #D6D6D6;
+    cursor: not-allowed;
+}
+
+.jselect .jselect-selected:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    margin-top: -2px;
+    right: 10px; 
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #9E9C9C;
+    border-bottom: none;
+}
+
+.jselect.open .jselect-selected {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.jselect.open .jselect-selected {
+    border-color: #4D9AF4;
+}
+
+.jselect.open .jselect-selected:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    margin-top: -2px;
+    right: 10px; 
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid #9E9C9C;
+    border-top: none;
+}
+
+.jselect .jselect-wrapper {
+    display: none;
+    position: absolute;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 999;
+    left: 0;
+    top: 33px;
+    border: 1px solid #DDDDDD;
+    box-sizing: content-box;
+    background: #FFF;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.jselect.open .jselect-wrapper {
+    display: block;
+    border-color: #4D9AF4;
+    border-top-color: #DDDDDD;
+}
+
+.jselect .jselect-wrapper .jselect-option {
+    padding: 5px 10px;
+    box-sizing: border-box;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.jselect .jselect-wrapper .jselect-option:hover, .jselect .jselect-wrapper .jselect-option.active {
+    background: #177BBB;
+    color: #FFFFFF;
+}
+
+.jselect .jselect-wrapper .jselect-option:last-child:hover {
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
