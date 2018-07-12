@@ -1,12 +1,12 @@
 $(function() {
     
-    var fruits = new JSelect(document.getElementById("fruits"), {
+    $("#fruits").jSelect({
         id: "fruits-jselect",
         placeholder: "Choose fruit",
         size: 2
     });
 
-    var colours = new JSelect(document.getElementById("colours"), {
+    $("#colours").jSelect({
         id: "colours-jselect",
         placeholder: "Choose colour",
         size: 4

@@ -13,16 +13,10 @@
             enteredText: '',
 
             createMarkup: function () {
-                this.container = $('<div />').addClass('jSelect').attr('id', self.settings.id);
+                this.container = $('<div />').addClass('jSelect').addClass(self.settings.cssClass).attr('id', self.settings.id);
                 self.$elem.before(this.container);
 
                 this.selected = $('<div />').addClass('jSelect-selected').text(self.settings.placeholder);
-
-                if (self.settings.value.length > 0) {
-                    methods.updateValue.call(self.elem, self.settings.value);
-                } else {
-                    this.selected.addClass('placeholder');
-                }
 
                 this.container.append(this.selected);
 
@@ -31,12 +25,26 @@
                 this.container.append(self.$elem);
 
                 this.createOptions();
+
+                self.$elemParent = self.$elem.parent();
+                self.$elemWrapper = $('.jSelect-wrapper', self.$elemParent);
+                self.$elemWrapperChildren = self.$elemWrapper.children();
+
+                var value = self.$elem.val();
+
+                if (value && value.length > 0) {
+                    methods.updateValue.call(self.elem, value);
+                } else if(self.settings.value.length > 0) {
+                    methods.updateValue.call(self.elem, self.settings.value);
+                } else {
+                    this.selected.addClass('placeholder');
+                }
             },
 
             createOptions: function () {
                 for (var i = 0; i < self.$elem.children().length; i++) {
                     var option = self.$elem.children()[i];
-                    if(!$(option).attr('disabled') && !$(option).attr('selected')) {
+                    if(!$(option).attr('disabled')) {
                         _private.createOption(option);
                     }
                 }
@@ -54,7 +62,6 @@
             listenForOptionClick: function (option) {
                 option.click(function() {
                     methods.selectOption.call(self.elem, option);
-                    methods.close.call(self);
                 });
             },
 
@@ -67,11 +74,7 @@
             },
 
             addEventHandlers: function () {
-                var select = $(self.elem),
-                    jSelect = select.parent();
-
-                jSelect.find('.jSelect-selected').click(function (e) {
-                    jSelect.removeClass('open');
+                self.$elemParent.click(function (e) {
                     _private.showDropdown(e);
 
                     return false;
@@ -80,35 +83,24 @@
                 $(document).click(_private.hideDropdown);
                 $(document).on("keydown", _private.triggerKeys);
             },
-
+            
             removeEventHandlers: function() {
-                var select = $(self.elem),
-                    jSelect = select.parent();
-
-                jSelect.off();
+                self.$elemParent.off();
                 $(document).off();
             },
 
             triggerKeys: function (e) {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
-
-                if (jSelect.hasClass('open')) {
+                if (self.$elemParent.hasClass('open')) {
 
                     if (e.keyCode === 40) {
                         _private.keyPresses++;
                         _private.moveDown();
-                    }
-
-                    if (e.keyCode === 38) {
+                    } else if (e.keyCode === 38) {
                         _private.keyPresses--;
                         _private.moveUp();
-                    }
-
-                    if (e.keyCode === 13) {
+                    } else if (e.keyCode === 13) {
                         if (_private.keyPresses > -1) {
-                            var option = $(jSelectWrapper.children()[_private.keyPresses]);
+                            var option = $(self.$elemWrapperChildren[_private.keyPresses]);
                             methods.selectOption.call(self.elem, option);
                         }
 
@@ -120,92 +112,70 @@
                         }
 
                         methods.close.call(self, e);
-                    }
-
-                    if (e.keyCode !== 0) {
+                    } else if (e.keyCode !== 0) {
                         _private.textSearch(e);
                     }
 
                     if (_private.keyPresses >= 0) {
-                        var option = $(jSelectWrapper.children()[_private.keyPresses]);
-                        _private.scrollOptions(jSelectWrapper, option);
+                        var option = $(self.$elemWrapperChildren[_private.keyPresses]);
+                        _private.scrollOptions(self.$elemWrapper, option);
                     }
                 }
             },
 
             moveDown: function () {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
-
-                if (_private.keyPresses >= jSelectWrapper.children().length) {
+                if (_private.keyPresses >= self.$elemWrapperChildren.length) {
                     _private.keyPresses = 0;
                 }
 
-                $(jSelectWrapper.children()).removeClass('active');
-                $(jSelectWrapper.children()[_private.keyPresses]).addClass('active');
+                $(self.$elemWrapperChildren).removeClass('active');
+                $(self.$elemWrapperChildren[_private.keyPresses]).addClass('active');
             },
 
             moveUp: function () {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
-
                 if (_private.keyPresses < 0) {
-                    _private.keyPresses = jSelectWrapper.children().length - 1;
+                    _private.keyPresses = self.$elemWrapperChildren.length - 1;
                 }
-
-                $(jSelectWrapper.children()).removeClass('active');
-                $(jSelectWrapper.children()[_private.keyPresses]).addClass('active');
+                
+                $(self.$elemWrapperChildren).removeClass('active');
+                $(self.$elemWrapperChildren[_private.keyPresses]).addClass('active');
             },
 
             textSearch: function (e) {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
-
                 clearTimeout(_private.enterTimeout);
                 _private.enteredText += String.fromCharCode(e.keyCode);
+                
+                self.$elemWrapperChildren.removeClass('active');
 
-                for (var i = 0; i < jSelectWrapper.children().length; i++) {
-                    var option = $(jSelectWrapper.children()[i]);
+                for (var i = 0; i < self.$elemWrapperChildren.length; i++) {
+                    var option = $(self.$elemWrapperChildren[i]);
                     if (option.text().toLowerCase().indexOf(_private.enteredText.toLowerCase()) === 0) {
                         option.addClass('active')
-                        _private.scrollOptions(jSelectWrapper, option);
+                        _private.scrollOptions(self.$elemWrapper, option); 
                         _private.keyPresses = i;
-                    } else {
-                        option.removeClass('active');
                     }
                 }
-
+                                               
                 _private.enterTimeout = setTimeout(function () {
                     _private.enteredText = '';
                 }, 500);
             },
-
+            
             setWidth: function() {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
+                var containerWidth = self.$elemParent[0].getBoundingClientRect().width;
 
-                var containerWidth = jSelect[0].getBoundingClientRect().width;
-
-                jSelectWrapper.css({
+                self.$elemWrapper.css({
                     width: containerWidth
-                });
+                });  
             },
 
             setNumberOfOptionsShown: function () {
-                var select = $(self.elem),
-                    jSelect = select.parent(),
-                    jSelectWrapper = $('.jSelect-wrapper', jSelect);
-
-                if (self.settings.size > 0 && jSelectWrapper.children().length > self.settings.size) {
-                    var option = $(jSelectWrapper.children()[0]);
+                if (self.settings.size > 0 && self.$elemWrapperChildren.length > self.settings.size) {
+                    var option = $(self.$elemWrapperChildren[0]);
                     var height = option.outerHeight();
                     var wrapperHeight = (height * self.settings.size);
-
-                    jSelectWrapper.css({
+                    
+                    self.$elemWrapper.css({
                         maxHeight: wrapperHeight
                     });
                 }
@@ -229,77 +199,66 @@
             this.elem = element;
             this.$elem = $(element);
             this.settings = $.extend(true, {}, $.jSelect.defaults, options);
-            this.settings.id = this.settings.id || this.$elem.attr('id') || new Date().toString();
 
-            if (!$(element).parent().hasClass('jSelect')) {
+            if(!$(element).parent().hasClass('jSelect')) {
                 _private.createMarkup();
-                if (self.settings.disabled) {
+
+                if(self.settings.disabled) {
                     $(element).parent().addClass('disabled');
                 } else {
                     _private.addEventHandlers();
                 }
             }
-
-            if (methods[options]) {
+            
+            if(methods[options]) {
                 methods[options].call(element, args[0]);
             }
         };
-
+        
         var methods = {
-
+            
             open: function() {
-                var select = this.$elem,
-                    jSelect = select.parent();
-
-                _private.setWidth()
-                _private.setNumberOfOptionsShown();
-
-                if (jSelect.hasClass('open')) {
-                    jSelect.removeClass('open');
+                _private.setWidth();
+                
+                if (this.$elemParent.hasClass('open')) {
+                    this.$elemParent.removeClass('open');
 
                     if (this.$elem.val() === null) {
                         this.$elem.val(null).trigger('change');
                     }
                 } else {
-                    jSelect.addClass('open');
+                    this.$elemParent.addClass('open');
+                    _private.setNumberOfOptionsShown();
                 }
             },
-
+            
             close: function() {
-                var select = this.$elem,
-                    jSelect = select.parent();
-
-                if (jSelect.hasClass('open')) {
-                    jSelect.removeClass('open');
-
+                if (this.$elemParent.hasClass('open')) {
+                    this.$elemParent.removeClass('open');
+                
                     if (this.$elem.val() === null) {
                         this.$elem.val(null).trigger('change');
+                        self.$elemWrapperChildren.removeClass('active');
                     }
                 }
             },
-
+            
             updateValue: function(value) {
-                var select = $(this),
-                    jSelect = select.parent(),
-                    jSelectOptions = $('.jSelect-wrapper', jSelect).children();
-
-                for (var i = 0; i < jSelectOptions.length; i++ ) {
-                    if ($(jSelectOptions[i]).attr('data-option-value') === value) {
-                        methods.selectOption.call(select, $(jSelectOptions[i]));
+                for (var i = 0; i < this.$elemWrapperChildren.length; i++ ) {
+                    if ($(this.$elemWrapperChildren[i]).attr('data-option-value') === value) {
+                        methods.selectOption.call(select, $(this.$elemWrapperChildren[i]));
                     }
                 }
             },
-
+            
             selectOption: function(option) {
-                var select = $(this),
-                    jSelect = select.parent(),
-                    optionText = option.text(),
+                var optionText = option.text(),
                     optionValue = option.attr('data-option-value')
 
-                $('.jSelect-wrapper', jSelect).children().removeClass('active');
+                self.$elemWrapperChildren.removeClass('active');
                 option.addClass('active');
-
-                $('.jSelect-selected', jSelect).text(optionText).removeClass('placeholder');  
+                
+                $('.jSelect-selected', self.$elemParent).text(optionText).removeClass('placeholder');  
                 self.settings.currentValue = optionValue;
 
                 for (var i = 0; i < self.$elem.children().length; i++) {
@@ -315,25 +274,19 @@
                 self.$elem.val(optionValue).trigger('change');
                 self.settings.onChange(self.settings.value);
             },
-
+            
             enable: function() {
-                var select = $(this),
-                    jSelect = select.parent();
-
-                jSelect.removeClass('disabled');
+                self.$elemParent.removeClass('disabled');
                 select.attr('disabled', false);
-
+                
                 self.settings.disabled = false;
                 _private.addEventHandlers.call(self.elem);
             },
-
+            
             disable: function() {
-                var select = $(this),
-                    jSelect = select.parent();
-
-                jSelect.addClass('disabled');
+                self.$elemParent.addClass('disabled');
                 select.attr('disabled', true);
-
+                
                 self.settings.disabled = true;
                 _private.removeEventHandlers.call(self.elem);
             }
@@ -341,23 +294,26 @@
     };
 
     $.fn.jSelect = function (options) {
-
+        
         var args = Array.prototype.slice.call(arguments, 1);
-
+        
         return this.each(function () {
+            
             var jSelect = new $.jSelect(this, options);
             $(this).data('jSelect', jSelect);
+            
             jSelect.init(args);
         });
     };
 
     $.jSelect.defaults = {
         id: '',
+        cssClass: '',
         placeholder: 'Please select an option',
-        value: '',
+        onChange: function (value) {},
         size: 0,
         keyBoardInput: true,
-        disabled: false,
-        onChange: function (value) {},
+        value: '',
+        disabled: false
     }
 })(jQuery);
